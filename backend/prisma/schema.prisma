@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  phone        String   @unique
+  ffUid        String?  @unique
+  balance      Decimal  @default(0)
+  tier         String   @default("Bronze")
+  createdAt    DateTime @default(now())
+  squads       SquadMember[]
+  transactions Transaction[]
+  screenshots  Screenshot[]
+}
+
+model Tournament {
+  id          String   @id @default(uuid())
+  title       String
+  format      String
+  entryFee    Decimal
+  prizePool   Decimal
+  maxPlayers  Int
+  startTime   DateTime
+  status      String   @default("upcoming")
+  participants TournamentParticipant[]
+}
+
+model Squad {
+  id        String   @id @default(uuid())
+  name      String
+  leaderId  String
+  members   SquadMember[]
+  createdAt DateTime @default(now())
+}
+
+model SquadMember {
+  id       String @id @default(uuid())
+  squadId  String
+  userId   String
+  role     String @default("member")
+  squad    Squad  @relation(fields: [squadId], references: [id])
+  user     User   @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  amount    Decimal
+  status    String
+  createdAt DateTime @default(now())
+  user      User   @relation(fields: [userId], references: [id])
+}
+
+model Screenshot {
+  id          String   @id @default(uuid())
+  userId      String
+  matchId     String?
+  imageUrl    String
+  ocrRank     String?
+  verified    Boolean  @default(false)
+  uploadedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model TournamentParticipant {
+  id            String @id @default(uuid())
+  tournamentId  String
+  userId        String
+  status        String @default("joined")
+  tournament    Tournament @relation(fields: [tournamentId], references: [id])
+}
