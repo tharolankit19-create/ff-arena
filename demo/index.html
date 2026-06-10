@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF Arena • Free Fire Tournaments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Press+Start+2P&amp;display=swap');
+        :root {
+            --ff-orange: #FF6B00;
+        }
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        .gaming-font {
+            font-family: 'Press Start 2P', system_ui, sans-serif;
+            letter-spacing: 1px;
+        }
+        .ff-orange { color: #FF6B00; }
+        .ff-bg { background-color: #0F0F1A; }
+        .ff-card {
+            background-color: #1A1A2E;
+            border: 1px solid #2A2A4A;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ff-card:hover {
+            transform: translateY(-2px);
+            border-color: #FF6B00;
+            box-shadow: 0 10px 15px -3px rgb(255 107 0 / 0.1);
+        }
+        .neon-orange {
+            box-shadow: 0 0 10px rgb(255 107 0 / 0.5);
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .tournament-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .tournament-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .nav-active {
+            color: #FF6B00;
+            border-bottom: 3px solid #FF6B00;
+        }
+        .modal {
+            animation: modalPop 0.2s ease forwards;
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .countdown {
+            font-variant-numeric: tabular-nums;
+        }
+        .ff-gradient {
+            background: linear-gradient(135deg, #FF6B00, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .player-row {
+            transition: background-color 0.1s ease;
+        }
+        .player-row:hover {
+            background-color: #2A2A4A;
+        }
+        .tier-bronze { background: linear-gradient(#CD7F32, #8B4513); }
+        .tier-silver { background: linear-gradient(#C0C0C0, #A8A8A8); }
+        .tier-gold { background: linear-gradient(#FFD700, #DAA520); }
+        .tier-platinum { background: linear-gradient(#E5E4E2, #BEBEBE); }
+        .tier-diamond { background: linear-gradient(#B9F2FF, #00BFFF); }
+        .tier-master { background: linear-gradient(#9932CC, #4B0082); }
+        .tier-grandmaster { background: linear-gradient(#FF4500, #8B0000); }
+        .app-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-[#0F0F1A] text-white">
+    <!-- LANDING PAGE -->
+    <div id="landing" class="min-h-screen">
+        <!-- Top Nav -->
+        <nav class="border-b border-white/10 bg-[#0F0F1A]/95 backdrop-blur-lg sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-11 h-11 bg-[#FF6B00] rounded-2xl flex items-center justify-center">
+                        <i class="fas fa-fire text-white text-3xl"></i>
+                    </div>
+                    <div>
+                        <span class="gaming-font text-3xl font-bold tracking-wider">FF ARENA</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-x-4">
+                    <div class="hidden md:flex items-center gap-x-2 text-sm">
+                        <div class="px-3 py-1.5 bg-white/5 rounded-full flex items-center gap-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-green-400 text-xs font-medium">142,891 PLAYERS ONLINE</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="showAppDemo()" 
+                            class="px-6 py-2.5 bg-white text-[#0F0F1A] font-semibold rounded-2xl text-sm flex items-center gap-x-2 hover:bg-white/90 transition-all active:scale-[0.985]">
+                        <span>Launch Web Demo</span>
+                        <i class="fas fa-play ml-1"></i>
+                    </button>
+                    
+                    <button onclick="showAppDemo()" 
+                            class="md:hidden px-5 py-2 bg-[#FF6B00] text-white font-semibold rounded-2xl text-sm flex items-center gap-x-2">
+                        <span>Play Now</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <div class="max-w-5xl mx-auto px-6 pt-16 pb-12 text-center">
+            <div class="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6">
+                <span class="text-[#FF6B00] text-xs font-bold tracking-[2px]">FREE FIRE OFFICIAL TOURNAMENT PLATFORM</span>
+            </div>
+            
+            <h1 class="text-6xl md:text-7xl font-black tracking-tighter mb-4">
+                COMPETE.<br>
+                <span class="ff-gradient">DOMINATE.</span><br>
+                CASH OUT.
+            </h1>
+            
+            <p class="max-w-md mx-auto text-xl text-white/70 mb-8">
+                The ultimate Free Fire esports platform. Join tournaments, climb the leaderboards, and win real cash in India, Bangladesh, Indonesia, Pakistan &amp; Nepal.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="showAppDemo()" 
+                        class="w-full sm:w-auto px-10 py-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 active:bg-[#FF6B00] transition-all text-white font-bold text-lg rounded-3xl flex items-center justify-center gap-x-3 shadow-xl shadow-[#FF6B00]/30">
+                    <span>ENTER THE ARENA</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                
+                <button onclick="document.getElementById('features').scrollIntoView({ behavior: 'smooth' })" 
+                        class="w-full sm:w-auto px-8 py-4 border border-white/30 hover:bg-white/5 font-semibold rounded-3xl flex items-center justify-center gap-x-2 text-lg">
+                    <span>Explore Features</span>
+                </button>
+            </div>
+
+            <div class="mt-8 flex items-center justify-center gap-x-8 text-sm">
+                <div class="flex -space-x-2">
+                    <img src="https://i.pravatar.cc/24?img=12" class="w-6 h-6 rounded-full ring-2 ring-[#0F0F1A]">
+                    <img src="https://i.pravatar.cc/24?img=28" class="w-6 h-6 rounded-full ring-2 ring-[#0F0F1A]">
+                    <img src="https://i.pravatar.cc/24?img=47" class="w-6 h-6 rounded-full ring-2 ring-[#0F0F1A]">
+                </div>
+                <span class="text-white/60">Joined by <span class="font-semibold text-white">89,472</span> players today</span>
+            </div>
+        </div>
+
+        <!-- Trust Bar -->
+        <div class="border-y border-white/10 py-5">
+            <div class="max-w-5xl mx-auto px-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 opacity-75">
+                <div class="flex items-center gap-x-2 text-sm">
+                    <i class="fas fa-shield-alt text-green-400"></i>
+                    <span class="font-medium">100% Secure Escrow</span>
+                </div>
+                <div class="flex items-center gap-x-2 text-sm">
+                    <i class="fas fa-globe text-blue-400"></i>
+                    <span class="font-medium">5 Countries Supported</span>
+                </div>
+                <div class="flex items-center gap-x-2 text-sm">
+                    <i class="fas fa-tachometer-alt text-yellow-400"></i>
+                    <span class="font-medium">₹2.8 Cr+ Paid Out</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div id="features" class="max-w-6xl mx-auto px-6 pt-16 pb-20">
+            <div class="text-center mb-12">
+                <span class="text-[#FF6B00] text-sm font-bold tracking-widest">WHY PLAYERS LOVE FF ARENA</span>
+                <h2 class="text-4xl font-bold mt-2">Built for serious Free Fire competitors</h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Feature cards -->
+                <div class="ff-card p-7 rounded-3xl">
+                    <div class="w-12 h-12 bg-[#FF6B00]/10 text-[#FF6B00] rounded-2xl flex items-center justify-center mb-5">
+                        <i class="fas fa-trophy text-3xl"></i>
+                    </div>
+                    <h3 class="font-bold text-2xl mb-2">Instant Tournaments</h3>
+                    <p class="text-white/70">Solo, Duo, Squad &amp; Clash Squad. Free &amp; paid entry from ₹10 to ₹1000. Auto matchmaking by rank.</p>
+                </div>
+                
+                <div class="ff-card p-7 rounded-3xl">
+                    <div class="w-12 h-12 bg-[#FF6B00]/10 text-[#FF6B00] rounded-2xl flex items-center justify-center mb-5">
+                        <i class="fas fa-wallet text-3xl"></i>
+                    </div>
+                    <h3 class="font-bold text-2xl mb-2">Fast Payouts</h3>
+                    <p class="text-white/70">Auto or verified distribution within 24h. UPI, bKash, GoPay, Easypaisa supported. Min withdrawal ₹50.</p>
+                </div>
+                
+                <div class="ff-card p-7 rounded-3xl">
+                    <div class="w-12 h-12 bg-[#FF6B00]/10 text-[#FF6B00] rounded-2xl flex items-center justify-center mb-5">
+                        <i class="fas fa-shield-alt text-3xl"></i>
+                    </div>
+                    <h3 class="font-bold text-2xl mb-2">Fair Play Guaranteed</h3>
+                    <p class="text-white/70">Mandatory screenshot proof + UID verification. AI-assisted review + community reporting system.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULL APP DEMO -->
+    <div id="app-demo" class="hidden min-h-screen ff-bg">
+        <!-- Top Bar -->
+        <div class="sticky top-0 z-50 border-b border-white/10 bg-[#0F0F1A]/95 backdrop-blur-xl">
+            <div class="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <div onclick="showLanding()" class="flex items-center gap-x-2 cursor-pointer">
+                        <div class="w-9 h-9 bg-[#FF6B00] rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-fire text-white"></i>
+                        </div>
+                        <span class="gaming-font text-2xl font-bold">FF ARENA</span>
+                    </div>
+                    
+                    <!-- Country Selector -->
+                    <div class="relative">
+                        <select id="country-select" onchange="updateCountry(this.value)" 
+                                class="bg-white/5 border border-white/20 text-sm rounded-2xl px-4 py-1.5 appearance-none pr-8 cursor-pointer">
+                            <option value="IN">🇮🇳 India (₹)</option>
+                            <option value="BD">🇧🇩 Bangladesh (৳)</option>
+                            <option value="ID">🇮🇩 Indonesia (Rp)</option>
+                            <option value="PK">🇵🇰 Pakistan (Rs)</option>
+                            <option value="NP">🇳🇵 Nepal (Rs)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-3 top-2.5 text-xs pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-4">
+                    <!-- Balance -->
+                    <div onclick="switchTab('wallet')" class="flex items-center gap-x-2 bg-white/5 hover:bg-white/10 px-4 h-9 rounded-2xl cursor-pointer transition-colors">
+                        <i class="fas fa-wallet text-[#FF6B00]"></i>
+                        <div>
+                            <span id="top-balance" class="font-mono font-semibold text-lg">₹12,450</span>
+                        </div>
+                    </div>
+
+                    <!-- User -->
+                    <div onclick="switchTab('profile')" class="flex items-center gap-x-2 cursor-pointer">
+                        <img src="https://i.pravatar.cc/32?img=28" class="w-8 h-8 rounded-2xl ring-2 ring-white/20">
+                        <div class="hidden md:block">
+                            <div class="text-sm font-medium">Ankit Tharol</div>
+                            <div class="text-[10px] text-white/50 -mt-0.5">Grandmaster • UID: 78429163</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-5 pt-6 pb-24">
+            
+            <!-- HOME SECTION -->
+            <div id="section-home" class="section active">
+                <div class="mb-6">
+                    <div class="flex items-end justify-between mb-4">
+                        <div>
+                            <span class="text-xs font-bold tracking-[1.5px] text-[#FF6B00]">WELCOME BACK, ANKIT</span>
+                            <h2 class="text-3xl font-bold">Ready to dominate?</h2>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-white/50">YOUR TIER</div>
+                            <div class="flex items-center justify-end gap-x-1.5">
+                                <div class="tier-grandmaster text-white text-xs font-bold px-3 py-0.5 rounded-full flex items-center gap-x-1">
+                                    <i class="fas fa-crown"></i> <span>GRANDMASTER</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hot Banner -->
+                <div class="relative rounded-3xl overflow-hidden mb-8 border border-white/10 h-[220px] flex items-center">
+                    <div class="absolute inset-0 bg-[radial-gradient(#FF6B00_0.8px,transparent_1px)] bg-[length:4px_4px] opacity-10"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
+                    
+                    <div class="relative px-8 z-10 max-w-md">
+                        <div class="flex items-center gap-x-2 mb-1">
+                            <span class="px-3 py-1 bg-red-500/90 text-xs font-bold rounded-full">LIVE • 2,847 JOINED</span>
+                        </div>
+                        <h3 class="text-4xl font-black tracking-tighter">SQUAD PAID CUP</h3>
+                        <p class="text-white/80 mt-1">Entry ₹100 • Prize Pool ₹2,85,000 • Grandmaster+</p>
+                        
+                        <div class="mt-4 flex items-center gap-x-3">
+                            <button onclick="quickJoin(1)" 
+                                    class="px-7 py-3 bg-white text-black font-bold rounded-2xl text-sm active:scale-[0.985] transition-transform flex items-center gap-x-2">
+                                <span>JOIN NOW</span>
+                            </button>
+                            <div class="text-xs px-3 py-2 bg-white/10 rounded-2xl">
+                                <span class="countdown font-mono" data-countdown="75">01:15:22</span> left
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute right-8 bottom-8 hidden lg:block">
+                        <div class="text-right">
+                            <div class="text-xs opacity-60">STARTS IN</div>
+                            <div class="font-mono text-4xl font-bold tracking-tighter text-[#FF6B00]">01:15</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="font-semibold text-sm">QUICK PLAY</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div onclick="quickJoinFormat('SOLO')" class="ff-card cursor-pointer p-4 rounded-3xl flex items-center gap-x-4 hover:border-[#FF6B00]">
+                            <i class="fas fa-user text-3xl text-[#FF6B00]"></i>
+                            <div>
+                                <div class="font-semibold">Solo</div>
+                                <div class="text-xs text-white/50">Free &amp; Paid</div>
+                            </div>
+                        </div>
+                        <div onclick="quickJoinFormat('DUO')" class="ff-card cursor-pointer p-4 rounded-3xl flex items-center gap-x-4 hover:border-[#FF6B00]">
+                            <i class="fas fa-user-friends text-3xl text-[#FF6B00]"></i>
+                            <div>
+                                <div class="font-semibold">Duo</div>
+                                <div class="text-xs text-white/50">₹10 - ₹500</div>
+                            </div>
+                        </div>
+                        <div onclick="quickJoinFormat('SQUAD')" class="ff-card cursor-pointer p-4 rounded-3xl flex items-center gap-x-4 hover:border-[#FF6B00]">
+                            <i class="fas fa-users text-3xl text-[#FF6B00]"></i>
+                            <div>
+                                <div class="font-semibold">Squad</div>
+                                <div class="text-xs text-white/50">Most Popular</div>
+                            </div>
+                        </div>
+                        <div onclick="quickJoinFormat('CLASH_SQUAD')" class="ff-card cursor-pointer p-4 rounded-3xl flex items-center gap-x-4 hover:border-[#FF6B00]">
+                            <i class="fas fa-bomb text-3xl text-[#FF6B00]"></i>
+                            <div>
+                                <div class="font-semibold">Clash Squad</div>
+                                <div class="text-xs text-white/50">Fast 4v4</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Tournaments -->
+                <div>
+                    <div class="flex justify-between items-center mb-4 px-1">
+                        <span class="font-semibold">UPCOMING TOURNAMENTS</span>
+                        <button onclick="switchTab('tournaments')" class="text-xs text-[#FF6B00] flex items-center gap-x-1">VIEW ALL <i class="fas fa-arrow-right text-xs"></i></button>
+                    </div>
+                    
+                    <div id="home-tournaments" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOURNAMENTS SECTION -->
+            <div id="section-tournaments" class="section">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-3xl font-bold">All Tournaments</h2>
+                    <div class="flex items-center gap-x-2">
+                        <input id="search-input" onkeyup="filterTournaments()" type="text" placeholder="Search tournaments..." 
+                               class="bg-white/5 border border-white/10 text-sm px-4 py-2 rounded-2xl w-64 focus:outline-none focus:border-[#FF6B00]">
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <div onclick="filterByFormat('all')" class="format-filter active px-5 py-1.5 text-sm bg-white/10 hover:bg-white/15 cursor-pointer rounded-2xl" data-format="all">All</div>
+                    <div onclick="filterByFormat('SOLO')" class="format-filter px-5 py-1.5 text-sm bg-white/5 hover:bg-white/15 cursor-pointer rounded-2xl" data-format="SOLO">Solo</div>
+                    <div onclick="filterByFormat('DUO')" class="format-filter px-5 py-1.5 text-sm bg-white/5 hover:bg-white/15 cursor-pointer rounded-2xl" data-format="DUO">Duo</div>
+                    <div onclick="filterByFormat('SQUAD')" class="format-filter px-5 py-1.5 text-sm bg-white/5 hover:bg-white/15 cursor-pointer rounded-2xl" data-format="SQUAD">Squad</div>
+                    <div onclick="filterByFormat('CLASH_SQUAD')" class="format-filter px-5 py-1.5 text-sm bg-white/5 hover:bg-white/15 cursor-pointer rounded-2xl" data-format="CLASH_SQUAD">Clash</div>
+                    
+                    <div class="flex-1"></div>
+                    
+                    <select id="fee-filter" onchange="filterTournaments()" class="bg-white/5 border border-white/10 text-sm px-3 py-1.5 rounded-2xl">
+                        <option value="">Any Entry Fee</option>
+                        <option value="0">Free (₹0)</option>
+                        <option value="10">₹10 - ₹49</option>
+                        <option value="50">₹50 - ₹99</option>
+                        <option value="100">₹100+</option>
+                    </select>
+                </div>
+
+                <div id="tournaments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <!-- JS populated tournament cards -->
+                </div>
+            </div>
+
+            <!-- LEADERBOARD SECTION -->
+            <div id="section-leaderboard" class="section">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-3xl font-bold">Leaderboards</h2>
+                    
+                    <div class="flex bg-white/5 rounded-2xl p-1">
+                        <div onclick="switchLeaderboardTab('global')" id="lb-tab-global" 
+                             class="px-5 py-1.5 text-sm font-medium cursor-pointer rounded-[14px] bg-white/10">Global</div>
+                        <div onclick="switchLeaderboardTab('regional')" id="lb-tab-regional" 
+                             class="px-5 py-1.5 text-sm font-medium cursor-pointer rounded-[14px]">India</div>
+                        <div onclick="switchLeaderboardTab('monthly')" id="lb-tab-monthly" 
+                             class="px-5 py-1.5 text-sm font-medium cursor-pointer rounded-[14px]">This Month</div>
+                    </div>
+                </div>
+
+                <div class="ff-card rounded-3xl overflow-hidden">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-white/10 text-left text-xs text-white/50">
+                                <th class="px-6 py-4 font-normal">RANK</th>
+                                <th class="px-6 py-4 font-normal">PLAYER</th>
+                                <th class="px-6 py-4 font-normal text-center">TIER</th>
+                                <th class="px-6 py-4 font-normal text-right">WIN RATE</th>
+                                <th class="px-6 py-4 font-normal text-right">EARNINGS</th>
+                                <th class="px-6 py-4 font-normal text-right">K/D</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="text-sm">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- WALLET SECTION -->
+            <div id="section-wallet" class="section">
+                <div class="max-w-2xl">
+                    <h2 class="text-3xl font-bold mb-1">Wallet</h2>
+                    <p class="text-white/60 mb-6">Secure escrow • Instant deposits • Fast local payouts</p>
+
+                    <!-- Balance Card -->
+                    <div class="ff-card rounded-3xl p-8 mb-6">
+                        <div class="text-sm text-white/60">AVAILABLE BALANCE</div>
+                        <div id="wallet-balance" class="text-6xl font-mono font-bold tracking-tighter mt-1">₹12,450</div>
+                        <div class="text-xs text-emerald-400 mt-1 flex items-center gap-x-1">
+                            <i class="fas fa-check-circle"></i> 
+                            <span>Escrow held: ₹4,200</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 mt-8">
+                            <button onclick="showDepositModal()" 
+                                    class="py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 font-semibold rounded-2xl flex items-center justify-center gap-x-2 transition-colors">
+                                <i class="fas fa-plus"></i> <span>DEPOSIT</span>
+                            </button>
+                            <button onclick="showWithdrawModal()" 
+                                    class="py-3.5 bg-white/10 hover:bg-white/15 font-semibold rounded-2xl flex items-center justify-center gap-x-2 transition-colors">
+                                <i class="fas fa-arrow-up"></i> <span>WITHDRAW</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3 px-1">
+                            <span class="font-semibold text-sm">RECENT TRANSACTIONS</span>
+                        </div>
+                        <div id="transactions-list" class="space-y-2">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFILE SECTION -->
+            <div id="section-profile" class="section max-w-2xl">
+                <div class="flex items-center gap-x-5 mb-8">
+                    <img src="https://i.pravatar.cc/96?img=28" class="w-20 h-20 rounded-3xl ring-4 ring-white/10">
+                    <div>
+                        <div class="text-3xl font-bold">Ankit Tharol</div>
+                        <div class="flex items-center gap-x-2 mt-0.5">
+                            <span class="font-mono text-sm bg-white/10 px-3 py-0.5 rounded-2xl">FF UID: 78429163</span>
+                            <button onclick="verifyFFUID()" class="text-xs px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center gap-x-1">
+                                <i class="fas fa-check-double text-xs"></i> <span class="font-medium">VERIFIED</span>
+                            </button>
+                        </div>
+                        <div class="mt-1 flex items-center gap-x-2">
+                            <div class="tier-grandmaster text-white text-xs px-3 py-px rounded-full font-bold flex items-center gap-1 w-fit">
+                                <i class="fas fa-crown text-xs"></i> GRANDMASTER
+                            </div>
+                            <span class="text-xs text-white/60">Level 87 • 2,184 matches</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="ff-card p-4 rounded-2xl text-center">
+                        <div class="text-xs text-white/50">WIN RATE</div>
+                        <div class="text-4xl font-mono font-bold mt-1">68.4%</div>
+                    </div>
+                    <div class="ff-card p-4 rounded-2xl text-center">
+                        <div class="text-xs text-white/50">TOTAL EARNINGS</div>
+                        <div class="text-4xl font-mono font-bold mt-1 text-emerald-400">₹4.82L</div>
+                    </div>
+                    <div class="ff-card p-4 rounded-2xl text-center">
+                        <div class="text-xs text-white/50">K/D RATIO</div>
+                        <div class="text-4xl font-mono font-bold mt-1">4.92</div>
+                    </div>
+                    <div class="ff-card p-4 rounded-2xl text-center">
+                        <div class="text-xs text-white/50">REFERRALS</div>
+                        <div class="text-4xl font-mono font-bold mt-1">47</div>
+                    </div>
+                </div>
+
+                <div class="ff-card p-6 rounded-3xl">
+                    <div class="font-semibold mb-3 flex items-center justify-between">
+                        <span>Referral Program</span>
+                        <span class="text-xs bg-white/10 px-3 py-1 rounded-2xl">₹50 + 10% commission</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <input id="referral-code" value="ANKIT-FF-7842" readonly class="flex-1 bg-white/5 border border-white/10 px-4 rounded-2xl text-sm">
+                        <button onclick="copyReferral()" class="px-6 bg-white/10 hover:bg-white/15 rounded-2xl text-sm font-medium">COPY</button>
+                    </div>
+                    <p class="text-xs text-white/50 mt-3">47 friends joined • You earned ₹12,450 from referrals</p>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button onclick="logoutDemo()" class="text-xs text-white/40 hover:text-white/70">Sign out of demo</button>
+                </div>
+            </div>
+
+            <!-- ADMIN SECTION (hidden by default, toggleable) -->
+            <div id="section-admin" class="section">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <span class="px-3 py-1 bg-red-500/90 text-xs font-bold rounded-full">ADMIN</span>
+                        <h2 class="text-3xl font-bold mt-1">Verification Dashboard</h2>
+                    </div>
+                    <button onclick="simulateNewProof()" class="text-xs px-4 py-2 bg-white/10 hover:bg-white/15 rounded-2xl flex items-center gap-x-2">
+                        <i class="fas fa-sync"></i> <span>Simulate New Proof</span>
+                    </button>
+                </div>
+
+                <div class="ff-card rounded-3xl overflow-hidden mb-8">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white/5">
+                            <tr>
+                                <th class="text-left px-6 py-4 font-normal">PLAYER</th>
+                                <th class="text-left px-6 py-4 font-normal">TOURNAMENT</th>
+                                <th class="text-center px-6 py-4 font-normal">CLAIMED RANK</th>
+                                <th class="text-center px-6 py-4 font-normal">PROOF</th>
+                                <th class="text-right px-6 py-4 font-normal">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-verification-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="ff-card p-6 rounded-3xl">
+                        <div class="font-semibold mb-4">Platform Analytics (Demo)</div>
+                        <canvas id="analytics-chart" height="120"></canvas>
+                    </div>
+                    <div class="ff-card p-6 rounded-3xl">
+                        <div class="font-semibold mb-4">Quick Stats</div>
+                        <div class="space-y-4 text-sm">
+                            <div class="flex justify-between"><span class="text-white/60">Today's Deposits</span> <span class="font-mono">₹8.4L</span></div>
+                            <div class="flex justify-between"><span class="text-white/60">Payouts Processed</span> <span class="font-mono text-emerald-400">₹6.1L</span></div>
+                            <div class="flex justify-between"><span class="text-white/60">Active Tournaments</span> <span class="font-mono">184</span></div>
+                            <div class="flex justify-between"><span class="text-white/60">Pending Verifications</span> <span class="font-mono text-amber-400">37</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="fixed bottom-0 left-0 right-0 bg-[#1A1A2E] border-t border-white/10 z-[60] md:max-w-7xl md:mx-auto">
+            <div class="max-w-7xl mx-auto px-2">
+                <div class="flex justify-around py-2 text-xs">
+                    <div onclick="switchTab('home')" class="nav-item flex flex-col items-center py-1 px-4 cursor-pointer" data-tab="home">
+                        <i class="fas fa-home text-xl mb-0.5"></i>
+                        <span class="text-[10px] font-medium">Home</span>
+                    </div>
+                    <div onclick="switchTab('tournaments')" class="nav-item flex flex-col items-center py-1 px-4 cursor-pointer" data-tab="tournaments">
+                        <i class="fas fa-tachometer-alt text-xl mb-0.5"></i>
+                        <span class="text-[10px] font-medium">Tournaments</span>
+                    </div>
+                    <div onclick="switchTab('leaderboard')" class="nav-item flex flex-col items-center py-1 px-4 cursor-pointer" data-tab="leaderboard">
+                        <i class="fas fa-chart-line text-xl mb-0.5"></i>
+                        <span class="text-[10px] font-medium">Leaderboard</span>
+                    </div>
+                    <div onclick="switchTab('wallet')" class="nav-item flex flex-col items-center py-1 px-4 cursor-pointer" data-tab="wallet">
+                        <i class="fas fa-wallet text-xl mb-0.5"></i>
+                        <span class="text-[10px] font-medium">Wallet</span>
+                    </div>
+                    <div onclick="switchTab('profile')" class="nav-item flex flex-col items-center py-1 px-4 cursor-pointer" data-tab="profile">
+                        <i class="fas fa-user text-xl mb-0.5"></i>
+                        <span class="text-[10px] font-medium">Profile</span>
+                    </div>
+                    <!-- Admin hidden access -->
+                    <div onclick="switchTab('admin')" class="nav-item flex flex-col items-center py-1 px-4 cursor-pointer text-red-400/70 hover:text-red-400" data-tab="admin">
+                        <i class="fas fa-user-shield text-xl mb-0.5"></i>
+                        <span class="text-[10px] font-medium">Admin</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Tournament Detail / Join Modal -->
+    <div id="tournament-modal" onclick="if (event.target.id === 'tournament-modal') hideTournamentModal()" class="hidden fixed inset-0 bg-black/70 z-[70] flex items-end md:items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="ff-card w-full md:w-[420px] md:rounded-3xl md:m-4 rounded-t-3xl p-6">
+            <div class="flex justify-between mb-4">
+                <div>
+                    <span id="modal-format-badge" class="text-xs px-3 py-1 bg-white/10 rounded-full"></span>
+                    <h3 id="modal-title" class="font-bold text-2xl mt-2"></h3>
+                </div>
+                <button onclick="hideTournamentModal()" class="text-2xl leading-none text-white/40 hover:text-white">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-sm">
+                <div class="flex justify-between"><span class="text-white/60">Entry Fee</span> <span id="modal-entry" class="font-mono font-semibold"></span></div>
+                <div class="flex justify-between"><span class="text-white/60">Prize Pool</span> <span id="modal-prize" class="font-mono font-semibold text-emerald-400"></span></div>
+                <div class="flex justify-between"><span class="text-white/60">Players</span> <span id="modal-players"></span></div>
+                <div class="flex justify-between"><span class="text-white/60">Starts</span> <span id="modal-start" class="font-mono"></span></div>
+            </div>
+
+            <div class="mt-6 pt-5 border-t border-white/10">
+                <button id="join-btn" onclick="joinCurrentTournament()" 
+                        class="w-full py-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 active:bg-[#FF6B00] font-bold rounded-2xl text-lg flex items-center justify-center gap-x-2">
+                    JOIN TOURNAMENT
+                </button>
+                <p class="text-center text-[10px] text-white/40 mt-3">15% platform fee • Funds held in secure escrow</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="deposit-modal" onclick="if (event.target.id === 'deposit-modal') hideDepositModal()" class="hidden fixed inset-0 bg-black/70 z-[70] flex items-end md:items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="ff-card w-full md:w-[380px] md:rounded-3xl md:m-4 rounded-t-3xl p-6">
+            <h3 class="font-bold text-xl mb-4">Deposit Funds</h3>
+            
+            <div class="mb-4">
+                <label class="text-xs text-white/60">AMOUNT</label>
+                <div class="flex items-center border border-white/20 rounded-2xl px-4 mt-1">
+                    <span id="deposit-currency" class="font-mono text-xl pr-2">₹</span>
+                    <input id="deposit-amount" type="number" value="500" class="flex-1 bg-transparent py-3 text-3xl font-mono outline-none">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="text-xs text-white/60">PAYMENT METHOD</label>
+                <div id="payment-methods" class="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    <!-- Populated based on country -->
+                </div>
+            </div>
+
+            <button onclick="processDeposit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-2xl">CONFIRM DEPOSIT</button>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdraw-modal" onclick="if (event.target.id === 'withdraw-modal') hideWithdrawModal()" class="hidden fixed inset-0 bg-black/70 z-[70] flex items-end md:items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="ff-card w-full md:w-[380px] md:rounded-3xl md:m-4 rounded-t-3xl p-6">
+            <h3 class="font-bold text-xl mb-1">Withdraw to Bank / Wallet</h3>
+            <p class="text-xs text-white/50 mb-4">Min ₹50 • Processed within 24h</p>
+
+            <div class="mb-4">
+                <label class="text-xs text-white/60">AMOUNT</label>
+                <div class="flex items-center border border-white/20 rounded-2xl px-4 mt-1">
+                    <span id="withdraw-currency" class="font-mono text-xl pr-2">₹</span>
+                    <input id="withdraw-amount" type="number" value="2000" class="flex-1 bg-transparent py-3 text-3xl font-mono outline-none">
+                </div>
+            </div>
+
+            <div class="mb-5 text-xs">
+                <label class="text-white/60">WITHDRAW TO</label>
+                <select id="withdraw-method" class="mt-1 w-full bg-white/5 border border-white/20 rounded-2xl px-4 py-3 text-sm">
+                    <!-- dynamic -->
+                </select>
+            </div>
+
+            <button onclick="processWithdraw()" class="w-full py-3.5 bg-white text-black font-semibold rounded-2xl">REQUEST WITHDRAWAL</button>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#FF6B00');
+        }
+
+        // Global State
+        let currentUser = {
+            id: 1,
+            name: "Ankit Tharol",
+            ffUid: "78429163",
+            balance: 12450,
+            tier: "Grandmaster",
+            country: "IN"
+        };
+
+        let tournaments = [
+            { id: 1, title: "Squad Paid Cup", format: "SQUAD", entryFee: 100, prizePool: 285000, playersJoined: 2847, maxPlayers: 3200, startTime: "2026-06-10T14:30:00", status: "upcoming", tier: "Grandmaster+" },
+            { id: 2, title: "Solo Scrims #42", format: "SOLO", entryFee: 0, prizePool: 0, playersJoined: 124, maxPlayers: 256, startTime: "2026-06-10T15:45:00", status: "upcoming", tier: "Any" },
+            { id: 3, title: "Duo Clash Night", format: "DUO", entryFee: 50, prizePool: 12500, playersJoined: 89, maxPlayers: 128, startTime: "2026-06-10T16:00:00", status: "upcoming", tier: "Gold+" },
+            { id: 4, title: "Clash Squad Elite", format: "CLASH_SQUAD", entryFee: 25, prizePool: 8500, playersJoined: 312, maxPlayers: 512, startTime: "2026-06-10T17:15:00", status: "upcoming", tier: "Platinum+" },
+            { id: 5, title: "Free Practice Solo", format: "SOLO", entryFee: 0, prizePool: 0, playersJoined: 567, maxPlayers: 1000, startTime: "2026-06-10T18:00:00", status: "upcoming", tier: "Any" }
+        ];
+
+        let leaderboard = [
+            { rank: 1, name: "ShadowSlayer99", ffUid: "4521897", tier: "Grandmaster", winRate: 82.4, earnings: 1245000, kd: 7.8, country: "IN" },
+            { rank: 2, name: "FireStorm_IN", ffUid: "78429163", tier: "Grandmaster", winRate: 68.4, earnings: 482000, kd: 4.92, country: "IN" },
+            { rank: 3, name: "BDBeastX", ffUid: "9918274", tier: "Master", winRate: 71.2, earnings: 312000, kd: 5.4, country: "BD" },
+            { rank: 4, name: "IndoKing", ffUid: "3344556", tier: "Diamond", winRate: 65.8, earnings: 187000, kd: 4.1, country: "ID" }
+        ];
+
+        let transactions = [
+            { id: 101, type: "deposit", amount: 5000, status: "completed", date: "2026-06-09", method: "UPI" },
+            { id: 102, type: "win", amount: 12500, status: "completed", date: "2026-06-08", method: "Prize" },
+            { id: 103, type: "withdraw", amount: 3000, status: "completed", date: "2026-06-07", method: "UPI" }
+        ];
+
+        let myMatches = [];
+        let adminProofs = [
+            { id: 1, player: "ShadowSlayer99", tournament: "Squad Paid Cup", claimedRank: 3, proofUrl: "#", status: "pending" },
+            { id: 2, player: "BDBeastX", tournament: "Duo Clash Night", claimedRank: 1, proofUrl: "#", status: "pending" }
+        ];
+
+        let currentCountry = "IN";
+        let currentTournamentId = null;
+
+        // Currency & Payment helpers
+        function getCurrency(country) {
+            const map = { IN: "₹", BD: "৳", ID: "Rp", PK: "Rs", NP: "Rs" };
+            return map[country] || "₹";
+        }
+
+        function getPaymentMethods(country) {
+            if (country === "IN") return ["UPI", "PhonePe", "Google Pay", "Bank Transfer"];
+            if (country === "BD") return ["bKash", "Nagad", "Rocket"];
+            if (country === "ID") return ["GoPay", "OVO", "Dana", "Bank Transfer"];
+            if (country === "PK") return ["Easypaisa", "JazzCash", "Bank Transfer"];
+            return ["Bank Transfer", "Mobile Money"];
+        }
+
+        function updateCountry(country) {
+            currentCountry = country;
+            currentUser.country = country;
+            
+            // Update displayed currency everywhere
+            document.querySelectorAll('#deposit-currency, #withdraw-currency').forEach(el => {
+                el.textContent = getCurrency(country);
+            });
+
+            // Re-render payment methods if modals open
+            if (!document.getElementById('deposit-modal').classList.contains('hidden')) {
+                renderPaymentMethods();
+            }
+            if (!document.getElementById('withdraw-modal').classList.contains('hidden')) {
+                renderWithdrawMethods();
+            }
+
+            // Refresh some UI
+            renderHomeTournaments();
+            showToast(`Switched to ${country} region`, 'info');
+        }
+
+        // Render functions
+        function renderHomeTournaments() {
+            const container = document.getElementById('home-tournaments');
+            container.innerHTML = '';
+
+            const upcoming = tournaments.slice(0, 3);
+            upcoming.forEach(t => {
+                const card = createTournamentCard(t, true);
+                container.appendChild(card);
+            });
+        }
+
+        function createTournamentCard(t, compact = false) {
+            const div = document.createElement('div');
+            div.className = `ff-card p-5 rounded-3xl tournament-card cursor-pointer ${compact ? 'text-sm' : ''}`;
+            
+            const timeLeft = getTimeLeft(t.startTime);
+            const currency = getCurrency(currentCountry);
+            
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <span class="text-xs px-2.5 py-px rounded bg-white/10">${t.format}</span>
+                        <div class="font-semibold mt-1.5 text-lg leading-tight">${t.title}</div>
+                    </div>
+                    <div class="text-right">
+                        ${t.entryFee === 0 ? 
+                            `<span class="text-emerald-400 text-xs font-bold px-2 py-0.5 bg-emerald-400/10 rounded">FREE</span>` : 
+                            `<span class="font-mono text-lg font-semibold">${currency}${t.entryFee}</span>`}
+                    </div>
+                </div>
+                
+                <div class="flex justify-between text-xs text-white/60 mb-4">
+                    <div>${t.playersJoined.toLocaleString()} / ${t.maxPlayers} joined</div>
+                    <div class="font-mono countdown" data-time="${t.startTime}">${timeLeft}</div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs">Prize</span><br>
+                        <span class="font-semibold">${currency}${t.prizePool.toLocaleString()}</span>
+                    </div>
+                    <button onclick="event.stopImmediatePropagation(); openTournamentModal(${t.id})" 
+                            class="px-5 py-1.5 text-xs bg-[#FF6B00] hover:bg-[#FF6B00]/90 rounded-2xl font-semibold transition-colors">
+                        ${t.entryFee === 0 ? 'JOIN FREE' : 'JOIN'}
+                    </button>
+                </div>
+            `;
+            
+            div.onclick = () => openTournamentModal(t.id);
+            return div;
+        }
+
+        function getTimeLeft(startTimeStr) {
+            const start = new Date(startTimeStr);
+            const now = new Date();
+            const diff = start - now;
+            if (diff <= 0) return "LIVE";
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            return `${hours}h ${mins}m`;
+        }
+
+        function renderAllTournaments(filtered = null) {
+            const container = document.getElementById('tournaments-grid');
+            container.innerHTML = '';
+
+            const list = filtered || tournaments;
+            list.forEach(t => {
+                const card = createTournamentCard(t);
+                container.appendChild(card);
+            });
+        }
+
+        function filterTournaments() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const feeFilter = document.getElementById('fee-filter').value;
+
+            let filtered = tournaments;
+
+            if (search) {
+                filtered = filtered.filter(t => t.title.toLowerCase().includes(search));
+            }
+
+            if (feeFilter) {
+                if (feeFilter === "0") filtered = filtered.filter(t => t.entryFee === 0);
+                else if (feeFilter === "10") filtered = filtered.filter(t => t.entryFee >= 10 && t.entryFee < 50);
+                else if (feeFilter === "50") filtered = filtered.filter(t => t.entryFee >= 50 && t.entryFee < 100);
+                else if (feeFilter === "100") filtered = filtered.filter(t => t.entryFee >= 100);
+            }
+
+            renderAllTournaments(filtered);
+        }
+
+        function filterByFormat(format) {
+            // Remove active from all
+            document.querySelectorAll('.format-filter').forEach(el => el.classList.remove('active', 'bg-white/10'));
+            document.querySelectorAll('.format-filter').forEach(el => el.classList.add('bg-white/5'));
+
+            // Activate clicked
+            const clicked = Array.from(document.querySelectorAll('.format-filter')).find(el => el.dataset.format === format);
+            if (clicked) {
+                clicked.classList.add('active', 'bg-white/10');
+                clicked.classList.remove('bg-white/5');
+            }
+
+            let filtered = tournaments;
+            if (format !== 'all') {
+                filtered = filtered.filter(t => t.format === format);
+            }
+            renderAllTournaments(filtered);
+        }
+
+        // Leaderboard
+        function renderLeaderboard(type = 'global') {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+
+            let data = [...leaderboard];
+
+            if (type === 'regional') {
+                data = data.filter(p => p.country === currentCountry);
+            } else if (type === 'monthly') {
+                // Demo: just sort by earnings
+                data.sort((a, b) => b.earnings - a.earnings);
+            }
+
+            data.forEach((player, index) => {
+                const row = document.createElement('tr');
+                row.className = `player-row border-b border-white/10 last:border-none ${player.ffUid === currentUser.ffUid ? 'bg-[#FF6B00]/10' : ''}`;
+                
+                const tierClass = player.tier.toLowerCase().replace('grandmaster', 'grandmaster').replace('master', 'master');
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-lg">#${player.rank}</td>
+                    <td class="px-6 py-4">
+                        <div class="font-medium">${player.name}</div>
+                        <div class="text-xs text-white/50 font-mono">${player.ffUid}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="tier-${tierClass} text-xs px-3 py-px rounded-full text-white font-bold">${player.tier}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-mono">${player.winRate}%</td>
+                    <td class="px-6 py-4 text-right font-mono text-emerald-400">₹${(player.earnings/1000).toFixed(0)}k</td>
+                    <td class="px-6 py-4 text-right font-mono">${player.kd}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function switchLeaderboardTab(tab) {
+            document.querySelectorAll('[id^="lb-tab-"]').forEach(el => el.classList.remove('bg-white/10'));
+            document.getElementById(`lb-tab-${tab}`).classList.add('bg-white/10');
+            renderLeaderboard(tab);
+        }
+
+        // Wallet
+        function updateWalletUI() {
+            const balEl = document.getElementById('wallet-balance');
+            const topBal = document.getElementById('top-balance');
+            
+            balEl.textContent = `${getCurrency(currentCountry)}${currentUser.balance.toLocaleString()}`;
+            topBal.textContent = `${getCurrency(currentCountry)}${currentUser.balance.toLocaleString()}`;
+
+            // Render transactions
+            const list = document.getElementById('transactions-list');
+            list.innerHTML = '';
+
+            transactions.slice(0, 4).forEach(tx => {
+                const item = document.createElement('div');
+                item.className = 'ff-card flex items-center justify-between p-3.5 rounded-2xl text-sm';
+                
+                const sign = tx.type === 'deposit' || tx.type === 'win' ? '+' : '-';
+                const color = tx.type === 'deposit' || tx.type === 'win' ? 'text-emerald-400' : 'text-red-400';
+                
+                item.innerHTML = `
+                    <div class="flex items-center gap-x-3">
+                        <div class="w-8 h-8 rounded-2xl flex items-center justify-center ${tx.type === 'win' ? 'bg-emerald-500/10' : 'bg-white/10'}">
+                            <i class="fas fa-${tx.type === 'deposit' ? 'arrow-down' : tx.type === 'win' ? 'trophy' : 'arrow-up'} ${color}"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</div>
+                            <div class="text-xs text-white/50">${tx.date} • ${tx.method}</div>
+                        </div>
+                    </div>
+                    <div class="font-mono ${color}">${sign}${getCurrency(currentCountry)}${tx.amount}</div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function showDepositModal() {
+            const modal = document.getElementById('deposit-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('deposit-amount').value = 500;
+            renderPaymentMethods();
+        }
+
+        function hideDepositModal() {
+            const modal = document.getElementById('deposit-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function renderPaymentMethods() {
+            const container = document.getElementById('payment-methods');
+            container.innerHTML = '';
+            const methods = getPaymentMethods(currentCountry);
+            const currency = getCurrency(currentCountry);
+
+            methods.forEach(method => {
+                const btn = document.createElement('div');
+                btn.className = 'px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl cursor-pointer text-center text-sm flex items-center justify-center gap-x-2';
+                btn.innerHTML = `<i class="fas fa-credit-card"></i> <span>${method}</span>`;
+                btn.onclick = () => {
+                    document.querySelectorAll('#payment-methods > div').forEach(d => d.classList.remove('border-[#FF6B00]'));
+                    btn.classList.add('border-[#FF6B00]');
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function processDeposit() {
+            const amount = parseInt(document.getElementById('deposit-amount').value) || 0;
+            if (amount < 10) {
+                showToast('Minimum deposit ₹10', 'error');
+                return;
+            }
+
+            currentUser.balance += amount;
+            transactions.unshift({
+                id: Date.now(),
+                type: "deposit",
+                amount: amount,
+                status: "completed",
+                date: new Date().toISOString().split('T')[0],
+                method: "UPI"
+            });
+
+            updateWalletUI();
+            hideDepositModal();
+            showToast(`₹${amount} deposited successfully!`, 'success');
+        }
+
+        function showWithdrawModal() {
+            const modal = document.getElementById('withdraw-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('withdraw-amount').value = 2000;
+            renderWithdrawMethods();
+        }
+
+        function hideWithdrawModal() {
+            const modal = document.getElementById('withdraw-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function renderWithdrawMethods() {
+            const select = document.getElementById('withdraw-method');
+            select.innerHTML = '';
+            const methods = getPaymentMethods(currentCountry);
+
+            methods.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                select.appendChild(opt);
+            });
+        }
+
+        function processWithdraw() {
+            const amount = parseInt(document.getElementById('withdraw-amount').value) || 0;
+            if (amount < 50) {
+                showToast('Minimum withdrawal ₹50', 'error');
+                return;
+            }
+            if (amount > currentUser.balance) {
+                showToast('Insufficient balance', 'error');
+                return;
+            }
+
+            currentUser.balance -= amount;
+            transactions.unshift({
+                id: Date.now(),
+                type: "withdraw",
+                amount: amount,
+                status: "pending",
+                date: new Date().toISOString().split('T')[0],
+                method: document.getElementById('withdraw-method').value
+            });
+
+            updateWalletUI();
+            hideWithdrawModal();
+            showToast(`Withdrawal of ${getCurrency(currentCountry)}${amount} requested. Processing...`, 'success');
+        }
+
+        // Tournament Join
+        function openTournamentModal(id) {
+            currentTournamentId = id;
+            const t = tournaments.find(x => x.id === id);
+            if (!t) return;
+
+            document.getElementById('modal-title').textContent = t.title;
+            document.getElementById('modal-format-badge').textContent = t.format;
+            document.getElementById('modal-entry').innerHTML = t.entryFee === 0 ? '<span class="text-emerald-400 font-bold">FREE</span>' : `${getCurrency(currentCountry)}${t.entryFee}`;
+            document.getElementById('modal-prize').textContent = `${getCurrency(currentCountry)}${t.prizePool.toLocaleString()}`;
+            document.getElementById('modal-players').innerHTML = `${t.playersJoined} / ${t.maxPlayers} <span class="text-xs">joined</span>`;
+            document.getElementById('modal-start').textContent = new Date(t.startTime).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+
+            const joinBtn = document.getElementById('join-btn');
+            joinBtn.textContent = t.entryFee === 0 ? 'JOIN FREE TOURNAMENT' : `PAY ${getCurrency(currentCountry)}${t.entryFee} & JOIN`;
+            
+            document.getElementById('tournament-modal').classList.remove('hidden');
+            document.getElementById('tournament-modal').classList.add('flex');
+        }
+
+        function hideTournamentModal() {
+            document.getElementById('tournament-modal').classList.remove('flex');
+            document.getElementById('tournament-modal').classList.add('hidden');
+        }
+
+        function joinCurrentTournament() {
+            const t = tournaments.find(x => x.id === currentTournamentId);
+            if (!t) return;
+
+            if (t.entryFee > 0 && currentUser.balance < t.entryFee) {
+                hideTournamentModal();
+                showToast('Insufficient balance. Please deposit first.', 'error');
+                setTimeout(() => switchTab('wallet'), 600);
+                return;
+            }
+
+            // Deduct fee
+            if (t.entryFee > 0) currentUser.balance -= t.entryFee;
+
+            // Add to my matches
+            myMatches.push({
+                ...t,
+                joinedAt: new Date().toISOString(),
+                status: "joined"
+            });
+
+            updateWalletUI();
+            hideTournamentModal();
+
+            showToast(`Successfully joined ${t.title}! Room details in 15 mins.`, 'success');
+
+            // Simulate room password reveal in 8 seconds for demo
+            setTimeout(() => {
+                if (confirm(`Room details ready for ${t.title}!\n\nRoom ID: FF-${Math.floor(Math.random()*900000)+100000}\nPassword: arena${Math.floor(Math.random()*90)+10}\n\nWould you like to simulate match end + proof upload?`)) {
+                    simulateMatchEnd(t.id);
+                }
+            }, 8000);
+        }
+
+        function quickJoin(id) {
+            openTournamentModal(id);
+        }
+
+        function quickJoinFormat(format) {
+            const available = tournaments.filter(t => t.format === format);
+            if (available.length > 0) {
+                openTournamentModal(available[0].id);
+            } else {
+                showToast(`No ${format} tournaments right now.`, 'info');
+            }
+        }
+
+        function simulateMatchEnd(tournamentId) {
+            showToast('Match completed! Upload your rank screenshot for verification.', 'info');
+            
+            // In real app this would open upload flow
+            setTimeout(() => {
+                const upload = confirm('Demo: Upload screenshot proof now? (simulated)');
+                if (upload) {
+                    showToast('Screenshot uploaded. Awaiting verification...', 'success');
+                    // Add to admin queue
+                    const t = tournaments.find(x => x.id === tournamentId);
+                    adminProofs.push({
+                        id: Date.now(),
+                        player: currentUser.name,
+                        tournament: t ? t.title : 'Unknown',
+                        claimedRank: Math.floor(Math.random() * 8) + 1,
+                        proofUrl: '#',
+                        status: 'pending'
+                    });
+                    if (document.getElementById('section-admin').classList.contains('active')) {
+                        renderAdminQueue();
+                    }
+                }
+            }, 1200);
+        }
+
+        // Admin functions
+        function renderAdminQueue() {
+            const tbody = document.getElementById('admin-verification-body');
+            tbody.innerHTML = '';
+
+            adminProofs.forEach(proof => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-white/10';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium">${proof.player}</td>
+                    <td class="px-6 py-4 text-sm">${proof.tournament}</td>
+                    <td class="px-6 py-4 text-center"><span class="font-mono">#${proof.claimedRank}</span></td>
+                    <td class="px-6 py-4 text-center"><button onclick="viewProof(${proof.id})" class="text-xs px-3 py-1 bg-white/10 rounded-xl">View Screenshot</button></td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="verifyProof(${proof.id}, true)" class="px-4 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 rounded-xl mr-1">VERIFY & PAYOUT</button>
+                        <button onclick="verifyProof(${proof.id}, false)" class="px-4 py-1 text-xs bg-red-600/90 hover:bg-red-500 rounded-xl">REJECT</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function viewProof(id) {
+            showToast('Opening screenshot viewer (demo) — in production this shows the uploaded image + OCR result.', 'info');
+        }
+
+        function verifyProof(id, approved) {
+            const proofIndex = adminProofs.findIndex(p => p.id === id);
+            if (proofIndex === -1) return;
+
+            const proof = adminProofs[proofIndex];
+            
+            if (approved) {
+                // Simulate payout
+                const payoutAmount = Math.floor(Math.random() * 8000) + 2500;
+                currentUser.balance += payoutAmount; // In real would credit winner
+                
+                transactions.unshift({
+                    id: Date.now(),
+                    type: "win",
+                    amount: payoutAmount,
+                    status: "completed",
+                    date: new Date().toISOString().split('T')[0],
+                    method: "Prize Pool"
+                });
+
+                showToast(`Proof approved! ₹${payoutAmount} paid out to ${proof.player}`, 'success');
+                updateWalletUI();
+            } else {
+                showToast(`Proof rejected for ${proof.player}`, 'error');
+            }
+
+            adminProofs.splice(proofIndex, 1);
+            renderAdminQueue();
+        }
+
+        function simulateNewProof() {
+            adminProofs.push({
+                id: Date.now(),
+                player: "NewPlayer_42",
+                tournament: "Solo Scrims #42",
+                claimedRank: 2,
+                proofUrl: "#",
+                status: "pending"
+            });
+            renderAdminQueue();
+            showToast('New proof added to verification queue', 'info');
+        }
+
+        function initAdminChart() {
+            const ctx = document.getElementById('analytics-chart');
+            if (!ctx) return;
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Daily Revenue (₹ Lakhs)',
+                        data: [4.2, 5.8, 3.9, 7.1, 6.4, 9.2, 8.5],
+                        borderColor: '#FF6B00',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(255, 107, 0, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: '#ffffff10' } }, x: { grid: { color: '#ffffff10' } } }
+                }
+            });
+        }
+
+        // Misc helpers
+        function updateAllCountdowns() {
+            document.querySelectorAll('.countdown').forEach(el => {
+                if (el.dataset.time) {
+                    el.textContent = getTimeLeft(el.dataset.time);
+                }
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-20 right-5 px-5 py-3 rounded-2xl shadow-2xl text-sm z-[999] flex items-center gap-x-3 ${type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-white/90 text-black'}`;
+            toast.innerHTML = `
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = 'all .2s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 200);
+            }, 2800);
+        }
+
+        function copyReferral() {
+            navigator.clipboard.writeText(document.getElementById('referral-code').value).then(() => {
+                showToast('Referral code copied!', 'success');
+            });
+        }
+
+        function verifyFFUID() {
+            showToast('FF UID already verified via Garena API (demo).', 'success');
+        }
+
+        function logoutDemo() {
+            if (confirm('Exit demo?')) {
+                document.getElementById('app-demo').classList.add('hidden');
+                document.getElementById('landing').classList.remove('hidden');
+            }
+        }
+
+        function switchTab(tab) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            // Show target
+            const target = document.getElementById(`section-${tab}`);
+            if (target) target.classList.add('active');
+
+            // Update nav active state
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('text-[#FF6B00]');
+                if (nav.dataset.tab === tab) nav.classList.add('text-[#FF6B00]');
+            });
+
+            // Special renders
+            if (tab === 'leaderboard') renderLeaderboard('global');
+            if (tab === 'wallet') updateWalletUI();
+            if (tab === 'admin') renderAdminQueue();
+            if (tab === 'tournaments') renderAllTournaments();
+        }
+
+        function filterByFormatClick(format) {
+            // helper if needed
+        }
+
+        function initDemo() {
+            initTailwind();
+
+            // Initial renders
+            renderHomeTournaments();
+            renderAllTournaments();
+            renderLeaderboard('global');
+            updateWalletUI();
+            renderAdminQueue();
+            initAdminChart();
+
+            // Start countdown updater
+            setInterval(updateAllCountdowns, 30000);
+
+            // Set initial country
+            const countrySelect = document.getElementById('country-select');
+            countrySelect.value = currentCountry;
+
+            // Keyboard support
+            document.addEventListener('keydown', function(e) {
+                if (e.key === "/" && document.activeElement.tagName === "BODY") {
+                    e.preventDefault();
+                    const search = document.getElementById('search-input');
+                    if (search) search.focus();
+                }
+            });
+
+            // Demo tip
+            setTimeout(() => {
+                // Optional first time tip - commented to avoid spam
+                // showToast('Tip: Try joining a tournament or switching country!', 'info');
+            }, 4500);
+
+            // Make sure home is active
+            document.getElementById('section-home').classList.add('active');
+
+            console.log('%c[FF Arena] Full interactive demo initialized successfully.', 'color:#666');
+        }
+
+        function showAppDemo() {
+            document.getElementById('landing').classList.add('hidden');
+            document.getElementById('app-demo').classList.remove('hidden');
+            
+            // Ensure home tab is shown
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById('section-home').classList.add('active');
+
+            // Highlight home nav
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('text-[#FF6B00]'));
+            const homeNav = document.querySelector('.nav-item[data-tab="home"]');
+            if (homeNav) homeNav.classList.add('text-[#FF6B00]');
+        }
+
+        function showLanding() {
+            document.getElementById('app-demo').classList.add('hidden');
+            document.getElementById('landing').classList.remove('hidden');
+        }
+
+        // Boot the demo
+        window.onload = function() {
+            initDemo();
+        };
+    </script>
+</body>
+</html>
