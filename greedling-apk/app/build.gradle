@@ -6,17 +6,27 @@ android {
     namespace 'com.ankit.greedling'
     compileSdk 35
 
+    signingConfigs {
+        stableDebug {
+            storeFile file('../signing/greedling-stable.jks')
+            storePassword 'greedling'
+            keyAlias 'greedling'
+            keyPassword 'greedling'
+        }
+    }
+
     defaultConfig {
-        applicationId 'com.ankit.greedling'
+        applicationId 'com.ankit.greedling.game'
         minSdk 24
         targetSdk 35
-        versionCode 3
-        versionName '0.1.0'
+        versionCode 4
+        versionName '0.1.1'
     }
 
     buildTypes {
         debug {
             minifyEnabled false
+            signingConfig signingConfigs.stableDebug
         }
     }
 
