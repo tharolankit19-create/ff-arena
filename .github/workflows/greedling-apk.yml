@@ -44,7 +44,18 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p /tmp/greedling-web greedling-apk/app/src/main/assets
-          base64 -d greedling-apk/game-payload/game.zip.b64 > /tmp/greedling-base.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, re
+          src = Path('greedling-apk/game-payload/game.zip.b64').read_text()
+          src = re.sub(r'\[\.\.\.\s*ELLIPSIZATION\s*\.\.\.\]', '', src, flags=re.I)
+          src = re.sub(r'\.\.\.\s*\(truncated\)', '', src, flags=re.I)
+          clean = ''.join(c for c in src if c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+          clean += '=' * ((4 - len(clean) % 4) % 4)
+          data = base64.b64decode(clean, validate=False)
+          Path('/tmp/greedling-base.zip').write_bytes(data)
+          print('base64 chars:', len(clean), 'decoded bytes:', len(data))
+          PY
           unzip -t /tmp/greedling-base.zip
           unzip -q /tmp/greedling-base.zip -d /tmp/greedling-web
           test -s /tmp/greedling-web/index.html
