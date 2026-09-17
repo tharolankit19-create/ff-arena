@@ -1,0 +1,86 @@
+name: Build Frosthaul Kingdoms Real APK
+
+on:
+  push:
+    branches:
+      - frosthaul-v5-apk
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore Frosthaul source
+        shell: bash
+        run: |
+          cat frosthaul_payload/part-* > /tmp/frosthaul.b64
+          base64 -d /tmp/frosthaul.b64 > /tmp/frosthaul.tar.gz
+          tar -xzf /tmp/frosthaul.tar.gz -C "$GITHUB_WORKSPACE"
+          test -f frosthaul_ci_project/web/package.json
+          test -f frosthaul_ci_project/android/app/build.gradle
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install web dependencies
+        working-directory: frosthaul_ci_project/web
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck web game
+        working-directory: frosthaul_ci_project/web
+        run: npm run typecheck
+
+      - name: Build web game
+        working-directory: frosthaul_ci_project/web
+        run: npm run build
+
+      - name: Copy web build into Android assets
+        shell: bash
+        run: |
+          rm -rf frosthaul_ci_project/android/app/src/main/assets/*
+          cp -R frosthaul_ci_project/web/dist/* frosthaul_ci_project/android/app/src/main/assets/
+          test -f frosthaul_ci_project/android/app/src/main/assets/index.html
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Accept Android licenses
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+
+      - name: Install Android SDK packages
+        run: /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Build Android APK with Gradle
+        working-directory: frosthaul_ci_project/android
+        run: gradle --no-daemon assembleDebug
+
+      - name: Verify APK with Android apksigner
+        shell: bash
+        run: |
+          APK=frosthaul_ci_project/android/app/build/outputs/apk/debug/app-debug.apk
+          test -f "$APK"
+          /usr/local/lib/android/sdk/build-tools/35.0.0/apksigner verify --verbose --print-certs "$APK"
+          cp "$APK" Frosthaul-Kingdoms-REAL-installable.apk
+
+      - name: Upload verified APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frosthaul-Kingdoms-REAL-installable
+          path: Frosthaul-Kingdoms-REAL-installable.apk
+          if-no-files-found: error
