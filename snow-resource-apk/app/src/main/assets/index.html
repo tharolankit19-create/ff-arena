@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<title>Snow Resource Manager</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#cdeaff;font-family:system-ui,-apple-system,sans-serif;touch-action:none}canvas{display:block;width:100%;height:100%}.ui{position:fixed;inset:0;pointer-events:none;color:#153049}.top{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center}.pill{background:rgba(255,255,255,.94);border:2px solid rgba(20,50,80,.1);border-radius:999px;padding:9px 14px;font-weight:800;box-shadow:0 8px 24px rgba(35,75,105,.15);white-space:nowrap}.cash{font-size:18px}.status{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(14,34,52,.88);color:#fff;padding:10px 15px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}.buy{position:absolute;left:50%;top:58px;transform:translateX(-50%);background:#fff;padding:8px 12px;border-radius:10px;font-weight:900;box-shadow:0 7px 20px rgba(30,60,85,.16);display:none}.loading{position:fixed;inset:0;display:grid;place-items:center;background:#cdeaff;z-index:20;font-weight:900;color:#17324a}.hint{position:absolute;right:14px;bottom:14px;background:rgba(255,255,255,.86);padding:8px 11px;border-radius:10px;font-size:12px;font-weight:800}@media(max-width:600px){.pill{font-size:11px;padding:8px 10px}.cash{font-size:14px}.status{max-width:calc(100% - 28px);overflow:hidden;text-overflow:ellipsis}}
+</style>
+</head>
+<body>
+<div id="loading" class="loading">Loading snowy world…</div>
+<div class="ui">
+  <div class="top"><div class="pill cash">$<span id="cash">0</span></div><div id="inv" class="pill">Wood 0 · Raw 0 · Cooked 0</div></div>
+  <div id="buy" class="buy">Unlock Pond · $200</div>
+  <div id="status" class="status">Tap anywhere on the snow to move</div>
+  <div class="hint">Tap ground • collect • cook • sell • unlock</div>
+</div>
+<script type="module">
+const loading=document.getElementById('loading');
+try{
+  const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
+  const scene=new THREE.Scene(); scene.background=new THREE.Color(0xcdeaff); scene.fog=new THREE.Fog(0xcdeaff,28,55);
+  const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05; document.body.prepend(renderer.domElement);
+  const camera=new THREE.OrthographicCamera(-10,10,7,-7,.1,100); const camOffset=new THREE.Vector3(12,16,12); const lookTarget=new THREE.Vector3(); camera.position.copy(camOffset); camera.lookAt(0,0,0);
+  scene.add(new THREE.HemisphereLight(0xd4efff,0x697b89,2.1));
+  const sun=new THREE.DirectionalLight(0xffffff,3.1); sun.position.set(-8,16,10); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-26; sun.shadow.camera.right=26; sun.shadow.camera.top=26; sun.shadow.camera.bottom=-26; scene.add(sun);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,18),new THREE.MeshStandardMaterial({color:0xeff8ff,roughness:.95})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+  function mat(c,opt={}){return new THREE.MeshStandardMaterial({color:c,roughness:.75,...opt})} function shadow(m){m.castShadow=true;m.receiveShadow=true;return m}
+  function playerFactory(){const g=new THREE.Group(); const b=shadow(new THREE.Mesh(new THREE.CapsuleGeometry(.38,.72,4,10),mat(0x3478f6))); b.position.y=.82; g.add(b); const h=shadow(new THREE.Mesh(new THREE.SphereGeometry(.35,12,8),mat(0x4e8cff))); h.position.y=1.48; g.add(h); const bp=shadow(new THREE.Mesh(new THREE.BoxGeometry(.55,.72,.28),mat(0x214f9a))); bp.position.set(0,.9,-.42); g.add(bp); return g}
+  function treeFactory(){const g=new THREE.Group(); const t=shadow(new THREE.Mesh(new THREE.CylinderGeometry(.18,.25,1.1,7),mat(0x75462d))); t.position.y=.55; g.add(t); [[.9,1.5,1.35],[.72,1.35,2],[.55,1.1,2.55]].forEach(([r,h,y])=>{const c=shadow(new THREE.Mesh(new THREE.ConeGeometry(r,h,8),mat(0x2f7c50))); c.position.y=y;g.add(c)});return g}
+  function bearFactory(){const g=new THREE.Group(),m=mat(0xf8fbff); const b=shadow(new THREE.Mesh(new THREE.BoxGeometry(1.35,.68,.72),m));b.position.y=.78;g.add(b); const head=shadow(new THREE.Mesh(new THREE.BoxGeometry(.58,.58,.58),m));head.position.set(0,.94,.6);g.add(head);[[-.45,.36,.22],[.45,.36,.22],[-.45,.36,-.22],[.45,.36,-.22]].forEach(p=>{const l=shadow(new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,.55,7),m));l.position.set(...p);g.add(l)});return g}
+  function resource(type){let mesh;if(type==='wood'){mesh=new THREE.Mesh(new THREE.CylinderGeometry(.18,.2,.55,8),mat(0x9a623e));mesh.rotation.z=Math.PI/2;mesh.userData.h=.38}else if(type==='raw'){mesh=new THREE.Mesh(new THREE.BoxGeometry(.55,.16,.42),mat(0xd84b4b));mesh.userData.h=.16}else if(type==='cooked'){mesh=new THREE.Mesh(new THREE.BoxGeometry(.52,.2,.4),mat(0x71432d));mesh.userData.h=.2}else{mesh=new THREE.Mesh(new THREE.BoxGeometry(.52,.13,.34),mat(0x4ecb71));mesh.userData.h=.13}mesh.userData.type=type;return shadow(mesh)}
+  const player=playerFactory(); scene.add(player); const stack=new THREE.Group(); stack.position.set(0,.78,-.58); player.add(stack); const inventory=[];
+  function restack(){let y=0;inventory.forEach((it,i)=>{const h=it.mesh.userData.h||.2;it.mesh.position.set(0,y+h/2,0);it.mesh.rotation.y=i%2?.09:-.09;y+=h+.06})}
+  function addItem(type){const mesh=resource(type);stack.add(mesh);inventory.push({type,mesh});restack();updateHud()}
+  function removeItem(type){for(let i=inventory.length-1;i>=0;i--){if(inventory[i].type===type){const [it]=inventory.splice(i,1);stack.remove(it.mesh);restack();updateHud();return it}}return null}
+  function count(type){return inventory.filter(x=>x.type===type).length}
+  let cash=0; const cashEl=document.getElementById('cash'),invEl=document.getElementById('inv'),statusEl=document.getElementById('status'),buyEl=document.getElementById('buy');
+  function updateHud(){cashEl.textContent=cash;invEl.textContent=`Wood ${count('wood')} · Raw ${count('raw')} · Cooked ${count('cooked')}`}
+  let statusTimer; function status(t,ms=1000){statusEl.textContent=t;clearTimeout(statusTimer);if(ms)statusTimer=setTimeout(()=>statusEl.textContent='Tap anywhere on the snow to move',ms)}
+  [[-6,-5],[-4.7,-6],[-7,3],[-5.5,5],[3.5,-6],[5.5,-5],[6,5],[3.5,6]].forEach(([x,z])=>{const t=treeFactory();t.position.set(x,0,z);t.scale.setScalar(.85+Math.random()*.35);scene.add(t)});
+  [[4.5,3.8],[-2.8,6]].forEach(([x,z])=>{const b=bearFactory();b.position.set(x,0,z);scene.add(b)});
+  const fire=new THREE.Group();fire.position.set(2,0,-2.3);for(let i=0;i<8;i++){const a=i/8*Math.PI*2,s=shadow(new THREE.Mesh(new THREE.DodecahedronGeometry(.19),mat(0x77818c)));s.position.set(Math.cos(a)*.62,.15,Math.sin(a)*.62);fire.add(s)};const flame=new THREE.Mesh(new THREE.ConeGeometry(.38,.9,8),mat(0xff8a2a,{emissive:0xff4d00,emissiveIntensity:2}));flame.position.y=.7;fire.add(flame);const glow=new THREE.PointLight(0xff7b32,6,7);glow.position.y=1.3;fire.add(glow);scene.add(fire);
+  const crowd=new THREE.Group();crowd.position.set(-5,0,3);[[-.5,-.3,0xffc857],[.1,-.5,0xef476f],[.55,.05,0x06d6a0],[-.15,.45,0x9b5de5],[-.7,.4,0x00bbf9]].forEach(([x,z,c])=>{const p=new THREE.Group();const b=shadow(new THREE.Mesh(new THREE.CapsuleGeometry(.22,.52,3,8),mat(c)));b.position.y=.55;p.add(b);p.position.set(x,0,z);crowd.add(p)});scene.add(crowd);
+  const fence=new THREE.Group(),posts=[];for(let z=-8;z<=8;z+=1){const p=shadow(new THREE.Mesh(new THREE.BoxGeometry(.22,1.6,.22),mat(0x916441)));p.position.set(8.5,.8,z);fence.add(p);if(Math.abs(z)<=1.1)posts.push(p)}scene.add(fence);
+  const pond=new THREE.Mesh(new THREE.PlaneGeometry(7,10),new THREE.MeshStandardMaterial({color:0x55b8e8,roughness:.22,transparent:true,opacity:0}));pond.rotation.x=-Math.PI/2;pond.position.set(12.7,.035,0);pond.visible=false;scene.add(pond);
+  const pickupData=[['wood',-5.7,-4.4],['wood',-4.7,-5.2],['wood',-6,3.8],['wood',-5,5],['wood',3.2,-5],['wood',5,-4.8],['wood',6,4.5],['wood',3.7,5.2],['wood',0,-6],['wood',6,-1],['raw',3.7,3.3],['raw',4.8,4.6],['raw',-2,5.5],['raw',-3.5,5.3],['raw',1,5],['raw',5.7,1.5]];
+  const pickups=pickupData.map(([type,x,z],i)=>{const mesh=resource(type);mesh.position.set(x,(mesh.userData.h||.2)/2+.08,z);scene.add(mesh);return{type,mesh,base:mesh.position.y,phase:i*.7,active:true}});
+  const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);let target=null;let bounds={minX:-8,maxX:7.7,minZ:-8,maxZ:8};
+  renderer.domElement.addEventListener('pointerdown',e=>{const r=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(pointer,camera);const h=new THREE.Vector3();if(ray.ray.intersectPlane(plane,h)){h.x=THREE.MathUtils.clamp(h.x,bounds.minX,bounds.maxX);h.z=THREE.MathUtils.clamp(h.z,bounds.minZ,bounds.maxZ);h.y=0;target=h}});
+  let cooking=false,cookTimer=0,sellTimer=0,unlocked=false,elapsed=0,last=performance.now();const tmpDir=new THREE.Vector3(),targetQ=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
+  function inside(pos,cx,cz,sx,sz){return Math.abs(pos.x-cx)<=sx/2&&Math.abs(pos.z-cz)<=sz/2}
+  function cashDrop(){const m=resource('cash');m.material=m.material.clone();m.material.transparent=true;m.position.set(-5+(Math.random()-.5),.25,3+(Math.random()-.5));scene.add(m);let t=0;const start=performance.now();function anim(now){t=Math.min((now-start)/650,1);m.position.y=.25+Math.sin(t*Math.PI)*1.2;m.rotation.y+=.18;m.material.opacity=t>.7?1-(t-.7)/.3:1;if(t<1)requestAnimationFrame(anim);else scene.remove(m)}requestAnimationFrame(anim)}
+  function unlock(){if(unlocked)return;if(cash<200){status(`Need $${200-cash} more`,900);return}cash-=200;unlocked=true;updateHud();status('Fishing pond unlocked!',1600);bounds={minX:-8,maxX:16,minZ:-8,maxZ:8};pond.visible=true;const start=performance.now();posts.forEach(p=>p.userData.sy=p.position.y);function anim(now){const t=Math.min((now-start)/900,1),e=1-Math.pow(1-t,3);posts.forEach(p=>p.position.y=THREE.MathUtils.lerp(p.userData.sy,-1.1,e));pond.material.opacity=e*.93;pond.scale.setScalar(.1+.9*e);if(t<1)requestAnimationFrame(anim);else buyEl.style.display='none'}requestAnimationFrame(anim)}
+  function resize(){const w=innerWidth,h=innerHeight,aspect=w/h,fh=13,fw=fh*aspect;camera.left=-fw/2;camera.right=fw/2;camera.top=fh/2;camera.bottom=-fh/2;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}addEventListener('resize',resize);resize();
+  loading.remove();updateHud();
+  function frame(now){requestAnimationFrame(frame);let dt=Math.min((now-last)/1000,.05);last=now;elapsed+=dt;
+    let moving=false;if(target){tmpDir.subVectors(target,player.position);tmpDir.y=0;const d=tmpDir.length();if(d<.08)target=null;else{tmpDir.normalize();player.position.addScaledVector(tmpDir,5.2*dt);player.position.x=THREE.MathUtils.clamp(player.position.x,bounds.minX,bounds.maxX);player.position.z=THREE.MathUtils.clamp(player.position.z,bounds.minZ,bounds.maxZ);targetQ.setFromAxisAngle(up,Math.atan2(tmpDir.x,tmpDir.z));player.quaternion.slerp(targetQ,1-Math.exp(-12*dt));moving=true}}
+    const camTarget=player.position.clone().add(camOffset),a=1-Math.exp(-4.5*dt);camera.position.lerp(camTarget,a);lookTarget.lerp(player.position,a);camera.lookAt(lookTarget);
+    stack.rotation.z=Math.sin(elapsed*7)*.025*Math.min(inventory.length/15,1)*(moving?1:.25);stack.rotation.x=Math.cos(elapsed*6)*.015*Math.min(inventory.length/15,1)*(moving?1:.25);
+    pickups.forEach(p=>{if(!p.active)return;p.mesh.position.y=p.base+Math.sin(elapsed*3+p.phase)*.05;p.mesh.rotation.y+=dt*.8;const dx=p.mesh.position.x-player.position.x,dz=p.mesh.position.z-player.position.z;if(dx*dx+dz*dz<.68){p.active=false;scene.remove(p.mesh);addItem(p.type);status(p.type==='wood'?'Wood collected':'Raw meat collected',500)}});
+    const inFire=inside(player.position,2,-2.3,2.5,2.5);if(cooking){cookTimer-=dt;if(cookTimer<=0){cooking=false;addItem('cooked');status('Meat cooked!',700)}}else if(inFire&&count('raw')>0){removeItem('raw');cooking=true;cookTimer=1;status('Cooking…',850)}
+    const inCrowd=inside(player.position,-5,3,3,3);if(inCrowd){sellTimer-=dt;if(sellTimer<=0){let type=count('cooked')?'cooked':count('wood')?'wood':null;if(type){removeItem(type);cash+=type==='cooked'?30:20;cashDrop();updateHud();sellTimer=.22;status(`Sold ${type==='wood'?'wood':'cooked meat'}!`,450)}}}else sellTimer=0;
+    const inBuy=inside(player.position,7.45,0,2.2,3);buyEl.style.display=!unlocked&&Math.abs(player.position.x-7.45)<4?'block':'none';if(!unlocked)buyEl.textContent=cash>=200?'Unlock Pond · $200 ✓':'Unlock Pond · $200';if(inBuy&&!unlocked)unlock();
+    renderer.render(scene,camera)}requestAnimationFrame(frame);
+}catch(err){loading.textContent='Could not load Three.js. Connect to the internet once, then reopen the game.';console.error(err)}
+</script>
+</body>
+</html>
