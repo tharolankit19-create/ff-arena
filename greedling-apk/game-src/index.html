@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#05090c" />
+  <title>GREEDLING</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="game"></div>
+
+  <div id="hud" class="hidden">
+    <div class="topbar">
+      <div class="brand">GREEDLING</div>
+      <div class="stat"><span>GOLD</span><b id="gold">0</b></div>
+      <div class="stat"><span>VALUE</span><b id="value">0</b></div>
+      <div class="stat"><span>STACK</span><b id="stack">0/6</b></div>
+      <div class="stat"><span>BEST</span><b id="best">0</b></div>
+    </div>
+    <div class="meterRow">
+      <div class="meterBlock"><span>DAWN</span><div class="meter"><i id="dawnBar"></i></div><b id="time">6:00</b></div>
+      <div class="meterBlock"><span>LEAN</span><div class="meter danger"><i id="leanBar"></i></div><b id="lean">0°</b></div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="start" class="screen active">
+    <div class="panel hero">
+      <div class="eyebrow">THE BRASS BAZAAR OPENS AT DUSK</div>
+      <h1>GREEDLING</h1>
+      <p>Stack a fortune. Don’t become one.</p>
+      <button id="startBtn" class="primary">START RAID</button>
+      <div class="micro">WASD / arrows · touch stick · Q drop · SPACE pack · E sell</div>
+    </div>
+  </div>
+
+  <div id="levelup" class="screen">
+    <div class="panel">
+      <div class="eyebrow">GREED MAKES YOU SMARTER</div>
+      <h2>PICK ONE</h2>
+      <div id="modChoices" class="choices"></div>
+      <button id="rerollBtn" class="ghost hidden">REROLL</button>
+    </div>
+  </div>
+
+  <div id="end" class="screen">
+    <div class="panel">
+      <div class="eyebrow" id="endEyebrow">THE TOWER REMEMBERS</div>
+      <h2 id="endTitle">12° FROM GLORY</h2>
+      <p id="endCopy">Dawn ate the rest.</p>
+      <div class="result"><span>BANKED</span><b id="banked">0</b></div>
+      <button id="againBtn" class="primary huge">RAID AGAIN</button>
+      <button id="denBtn" class="ghost">THE DEN</button>
+    </div>
+  </div>
+
+  <div id="den" class="screen">
+    <div class="panel denPanel">
+      <div class="eyebrow">PUT THE GOLD WHERE THE ROOF WON’T FIND IT</div>
+      <h2>THE DEN</h2>
+      <div class="result"><span>STASH</span><b id="stash">0</b></div>
+      <div id="upgradeGrid" class="upgradeGrid"></div>
+      <button id="denRaidBtn" class="primary">RAID AGAIN</button>
+    </div>
+  </div>
+
+  <div id="touchUI">
+    <div id="stick" class="stick"><div id="knob"></div></div>
+    <div class="actions">
+      <button id="dropBtn">DROP</button>
+      <button id="packBtn">PACK</button>
+      <button id="sellBtn" class="accent">SELL</button>
+    </div>
+  </div>
+
+  <script type="module" src="./greedling.mjs"></script>
+</body>
+</html>
