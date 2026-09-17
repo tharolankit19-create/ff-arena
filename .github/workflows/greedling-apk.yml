@@ -1,0 +1,98 @@
+name: Build GREEDLING APK
+
+on:
+  push:
+    branches: [greedling-apk-build]
+    paths:
+      - 'greedling-apk/**'
+      - '.github/workflows/greedling-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Ensure Android SDK components
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Restore and validate offline game payload
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/greedling-web greedling-apk/app/src/main/assets
+          base64 -d greedling-apk/game-payload/game.zip.b64 > /tmp/greedling-base.zip
+          unzip -t /tmp/greedling-base.zip
+          unzip -q /tmp/greedling-base.zip -d /tmp/greedling-web
+          test -s /tmp/greedling-web/index.html
+          test -s /tmp/greedling-web/greedling.mjs
+          test -s /tmp/greedling-web/catalog.mjs
+          test -s /tmp/greedling-web/styles.css
+          curl -fsSL --retry 3 "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" -o /tmp/greedling-web/three.module.js || \
+            curl -fsSL --retry 3 "https://unpkg.com/three@0.180.0/build/three.module.js" -o /tmp/greedling-web/three.module.js
+          test -s /tmp/greedling-web/three.module.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/greedling-web/greedling.mjs')
+          s = p.read_text()
+          remote = 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js'
+          if remote not in s:
+              raise SystemExit('Expected Three.js import was not found')
+          p.write_text(s.replace(remote, './three.module.js'))
+          PY
+          node --check /tmp/greedling-web/greedling.mjs
+          node --check /tmp/greedling-web/catalog.mjs
+          ! grep -R "cdn.jsdelivr.net/npm/three\|unpkg.com/three" /tmp/greedling-web/*.mjs
+          (cd /tmp/greedling-web && zip -9 -q -r "$GITHUB_WORKSPACE/greedling-apk/app/src/main/assets/game.zip" .)
+          unzip -t greedling-apk/app/src/main/assets/game.zip
+          unzip -l greedling-apk/app/src/main/assets/game.zip
+
+      - name: Build debug APK
+        working-directory: greedling-apk
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+
+      - name: Verify APK and bundled game
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK="greedling-apk/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+          unzip -t "$APK"
+          unzip -p "$APK" assets/game.zip > /tmp/final-game.zip
+          unzip -t /tmp/final-game.zip
+          unzip -l /tmp/final-game.zip | grep three.module.js
+          unzip -p /tmp/final-game.zip greedling.mjs | grep -q "./three.module.js"
+          cp "$APK" GREEDLING-playable.apk
+          sha256sum GREEDLING-playable.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GREEDLING-playable-apk
+          path: GREEDLING-playable.apk
+          if-no-files-found: error
+          retention-days: 7
