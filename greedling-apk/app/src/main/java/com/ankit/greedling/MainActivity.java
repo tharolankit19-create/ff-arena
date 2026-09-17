@@ -24,7 +24,7 @@ import java.util.zip.ZipInputStream;
 public class MainActivity extends Activity {
     private static final String APP_HOST = "greedling.local";
     private static final String APP_URL = "https://" + APP_HOST + "/index.html";
-    private static final String ASSET_VERSION = "3";
+    private static final String ASSET_VERSION = "4";
 
     private WebView webView;
     private File webRoot;
