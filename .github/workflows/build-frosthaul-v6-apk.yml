@@ -75,12 +75,12 @@ jobs:
           unzip -q /tmp/sword_attack.zip -d /tmp/sword_attack
           unzip -q /tmp/sword_clash.zip -d /tmp/sword_clash
 
-          ATTACK_WAV="$(find /tmp/sword_attack -type f -iname '*.wav' | sort | head -1)"
-          CLASH_WAV="$(find /tmp/sword_clash -type f -iname '*.wav' | sort | head -1)"
-          test -n "$ATTACK_WAV"
-          test -n "$CLASH_WAV"
-          cp "$ATTACK_WAV" "$AUDIO/sword_attack.wav"
-          cp "$CLASH_WAV" "$AUDIO/sword_clash.wav"
+          ATTACK_AUDIO="$(find /tmp/sword_attack -type f \( -iname '*.wav' -o -iname '*.ogg' -o -iname '*.mp3' \) | sort | head -1)"
+          CLASH_AUDIO="$(find /tmp/sword_clash -type f \( -iname '*.wav' -o -iname '*.ogg' -o -iname '*.mp3' \) | sort | head -1)"
+          test -n "$ATTACK_AUDIO"
+          test -n "$CLASH_AUDIO"
+          ffmpeg -hide_banner -loglevel error -y -i "$ATTACK_AUDIO" -ac 1 -ar 44100 "$AUDIO/sword_attack.wav"
+          ffmpeg -hide_banner -loglevel error -y -i "$CLASH_AUDIO" -ac 1 -ar 44100 "$AUDIO/sword_clash.wav"
 
           for f in             "$MODELS/Knight.glb"             "$MODELS/Barbarian.glb"             "$MODELS/Rogue.glb"             "$MODELS/Rogue_Hooded.glb"             "$AUDIO/calm_theme.ogg"             "$AUDIO/war_loop.mp3"             "$AUDIO/sword_attack.wav"             "$AUDIO/sword_clash.wav"             "$AUDIO/victory.mp3"             "$AUDIO/defeat.mp3"
           do
