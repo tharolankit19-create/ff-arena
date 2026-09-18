@@ -1,0 +1,33 @@
+name: Export Frosthaul Source
+
+on:
+  push:
+    branches:
+      - frosthaul-v5-apk
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore Frosthaul source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat frosthaul_payload/part-* > /tmp/frosthaul.b64
+          base64 -d /tmp/frosthaul.b64 > /tmp/frosthaul.tar.gz
+          tar -xzf /tmp/frosthaul.tar.gz -C "$GITHUB_WORKSPACE"
+          test -d frosthaul_ci_project/web
+          test -d frosthaul_ci_project/android
+
+      - name: Pack source
+        run: tar -czf Frosthaul-v5-source.tar.gz frosthaul_ci_project
+
+      - name: Upload source
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frosthaul-v5-source
+          path: Frosthaul-v5-source.tar.gz
+          if-no-files-found: error
