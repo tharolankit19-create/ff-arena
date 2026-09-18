@@ -1,0 +1,171 @@
+name: Build Frosthaul Kingdoms v6 APK
+
+on:
+  push:
+    branches:
+      - frosthaul-v6-top-level
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore v5 source and apply v6 gameplay patch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat frosthaul_payload/part-* > /tmp/frosthaul-v5.b64
+          base64 -d /tmp/frosthaul-v5.b64 > /tmp/frosthaul-v5.tar.gz
+          tar -xzf /tmp/frosthaul-v5.tar.gz -C "$GITHUB_WORKSPACE"
+          test -f frosthaul_ci_project/web/package.json
+          test -f frosthaul_ci_project/android/app/build.gradle
+
+          cp -a frosthaul_ci_project frosthaul_v6
+
+          cat frosthaul_v6_patch/part-* > /tmp/frosthaul-v6-patch.b64
+          base64 -d /tmp/frosthaul-v6-patch.b64 > /tmp/frosthaul-v6-patch.gz
+          gzip -dc /tmp/frosthaul-v6-patch.gz > /tmp/frosthaul-v6.patch
+
+          sed             -e 's#/mnt/data/frosthaul_v5_orig/frosthaul_ci_project/#a/#g'             -e 's#/mnt/data/frosthaul_v6/#b/#g'             /tmp/frosthaul-v6.patch > /tmp/frosthaul-v6-relative.patch
+
+          patch -d frosthaul_v6 -p1 < /tmp/frosthaul-v6-relative.patch
+
+          test -f frosthaul_v6/web/src/game/BattleSystem.ts
+          test -f frosthaul_v6/web/src/game/RealAssets.ts
+          test -f frosthaul_v6/android/app/src/main/java/com/ankit/frosthaulkingdomsv6/MainActivity.java
+          grep -R -q 'Made by Ankit Tharol' frosthaul_v6/web/src
+          grep -R -q 'marketSquare' frosthaul_v6/web/src
+          grep -R -q 'tradeGuild' frosthaul_v6/web/src
+
+      - name: Vendor licensed character, BGM and SFX assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          MODELS="$GITHUB_WORKSPACE/frosthaul_v6/web/public/assets/models"
+          AUDIO="$GITHUB_WORKSPACE/frosthaul_v6/web/public/assets/audio"
+          mkdir -p "$MODELS" "$AUDIO" /tmp/sword_attack /tmp/sword_clash
+
+          git clone --depth 1 https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0.git /tmp/kaykit
+          KBASE="/tmp/kaykit/addons/kaykit_character_pack_adventures/Characters/gltf"
+
+          cp "$KBASE/Knight.glb" "$MODELS/Knight.glb"
+          cp "$KBASE/Barbarian.glb" "$MODELS/Barbarian.glb"
+          cp "$KBASE/Rogue.glb" "$MODELS/Rogue.glb"
+          cp "$KBASE/Rogue_Hooded.glb" "$MODELS/Rogue_Hooded.glb"
+          cp /tmp/kaykit/LICENSE.txt "$MODELS/KAYKIT_LICENSE.txt"
+
+          CURL=(curl -fL --retry 4 --retry-delay 2 -A 'Frosthaul-Kingdoms-build/6.0')
+
+          "${CURL[@]}" 'https://opengameart.org/sites/default/files/calm_theme.ogg' -o "$AUDIO/calm_theme.ogg"
+          "${CURL[@]}" 'https://opengameart.org/sites/default/files/raiders_march_-_loop.mp3' -o "$AUDIO/war_loop.mp3"
+          "${CURL[@]}" 'https://opengameart.org/sites/default/files/victory_0.mp3' -o "$AUDIO/victory.mp3"
+          "${CURL[@]}" 'https://opengameart.org/sites/default/files/defeat_0.mp3' -o "$AUDIO/defeat.mp3"
+          "${CURL[@]}" 'https://opengameart.org/sites/default/files/sword_-_starninjas_1.zip' -o /tmp/sword_attack.zip
+          "${CURL[@]}" 'https://opengameart.org/sites/default/files/sword_clash_-_starninjas_0.zip' -o /tmp/sword_clash.zip
+
+          unzip -q /tmp/sword_attack.zip -d /tmp/sword_attack
+          unzip -q /tmp/sword_clash.zip -d /tmp/sword_clash
+
+          ATTACK_WAV="$(find /tmp/sword_attack -type f -iname '*.wav' | sort | head -1)"
+          CLASH_WAV="$(find /tmp/sword_clash -type f -iname '*.wav' | sort | head -1)"
+          test -n "$ATTACK_WAV"
+          test -n "$CLASH_WAV"
+          cp "$ATTACK_WAV" "$AUDIO/sword_attack.wav"
+          cp "$CLASH_WAV" "$AUDIO/sword_clash.wav"
+
+          for f in             "$MODELS/Knight.glb"             "$MODELS/Barbarian.glb"             "$MODELS/Rogue.glb"             "$MODELS/Rogue_Hooded.glb"             "$AUDIO/calm_theme.ogg"             "$AUDIO/war_loop.mp3"             "$AUDIO/sword_attack.wav"             "$AUDIO/sword_clash.wav"             "$AUDIO/victory.mp3"             "$AUDIO/defeat.mp3"
+          do
+            test -s "$f"
+          done
+
+          file "$MODELS/Knight.glb"
+          file "$AUDIO/war_loop.mp3"
+          file "$AUDIO/sword_attack.wav"
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install web dependencies
+        working-directory: frosthaul_v6/web
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck web game
+        working-directory: frosthaul_v6/web
+        run: npm run typecheck
+
+      - name: Build production web game
+        working-directory: frosthaul_v6/web
+        run: npm run build
+
+      - name: Validate production game payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frosthaul_v6/web/dist/index.html
+          test -s frosthaul_v6/web/dist/assets/models/Knight.glb
+          test -s frosthaul_v6/web/dist/assets/models/Barbarian.glb
+          test -s frosthaul_v6/web/dist/assets/audio/calm_theme.ogg
+          test -s frosthaul_v6/web/dist/assets/audio/war_loop.mp3
+          test -s frosthaul_v6/web/dist/assets/audio/sword_attack.wav
+          test -s frosthaul_v6/web/dist/assets/audio/victory.mp3
+          grep -R -q 'Made by Ankit Tharol' frosthaul_v6/web/dist/assets
+
+      - name: Copy web build into Android assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf frosthaul_v6/android/app/src/main/assets/*
+          cp -R frosthaul_v6/web/dist/* frosthaul_v6/android/app/src/main/assets/
+          test -s frosthaul_v6/android/app/src/main/assets/index.html
+          test -s frosthaul_v6/android/app/src/main/assets/assets/models/Knight.glb
+          test -s frosthaul_v6/android/app/src/main/assets/assets/audio/war_loop.mp3
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Accept Android licenses
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+
+      - name: Install Android SDK packages
+        run: /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Build Android APK with Gradle
+        working-directory: frosthaul_v6/android
+        run: gradle --no-daemon assembleDebug
+
+      - name: Verify APK with Android apksigner
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=frosthaul_v6/android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          /usr/local/lib/android/sdk/build-tools/35.0.0/apksigner verify --verbose --print-certs "$APK"
+          cp "$APK" Frosthaul-Kingdoms-v6-Top-Level.apk
+          sha256sum Frosthaul-Kingdoms-v6-Top-Level.apk
+          unzip -l Frosthaul-Kingdoms-v6-Top-Level.apk | grep -E 'assets/(assets/models/Knight.glb|assets/audio/war_loop.mp3|index.html)'
+
+      - name: Upload verified APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frosthaul-Kingdoms-v6-Top-Level
+          path: Frosthaul-Kingdoms-v6-Top-Level.apk
+          if-no-files-found: error
