@@ -1,0 +1,39 @@
+name: Export Frosthaul v6 Web Assets
+on:
+  push:
+    branches: [frosthaul-v6-web-assets-export]
+  workflow_dispatch:
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Quaternius animated assets used by Three.js manual
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p Frosthaul-v6-web-assets
+          base='https://threejs.org/manual/examples/resources/models'
+          curl -L --fail --retry 3 "$base/animals/Horse.gltf" -o Frosthaul-v6-web-assets/Horse.gltf
+          curl -L --fail --retry 3 "$base/animals/Cow.gltf" -o Frosthaul-v6-web-assets/Cow.gltf
+          curl -L --fail --retry 3 "$base/knight/KnightCharacter.gltf" -o Frosthaul-v6-web-assets/KnightCharacter.gltf
+          python - <<'PY'
+          from pathlib import Path
+          for name in ['Horse.gltf','Cow.gltf','KnightCharacter.gltf']:
+              p=Path('Frosthaul-v6-web-assets')/name
+              txt=p.read_text(errors='ignore')
+              if '"animations"' not in txt:
+                  raise SystemExit(f'{name}: animations missing')
+              print(name, p.stat().st_size)
+          (Path('Frosthaul-v6-web-assets')/'SOURCES.txt').write_text(
+              'Models: Quaternius animated animal/knight assets as distributed in the Three.js manual examples.\n'
+              'Source: https://threejs.org/manual/en/game.html\n'
+              'Quaternius animal pack: free for personal/commercial projects; CC0.\n'
+          )
+          PY
+          tar -czf Frosthaul-v6-web-assets.tar.gz Frosthaul-v6-web-assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Frosthaul-v6-web-assets
+          path: Frosthaul-v6-web-assets.tar.gz
+          if-no-files-found: error
