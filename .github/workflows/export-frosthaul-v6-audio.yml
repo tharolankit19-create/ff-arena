@@ -1,0 +1,44 @@
+name: Export Frosthaul v6 Audio
+on:
+  push:
+    branches: [frosthaul-v6-audio-export]
+  workflow_dispatch:
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download CC0 music and SFX
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p Frosthaul-v6-audio
+          curl -L --fail --retry 3 'https://opengameart.org/sites/default/files/Loop_Market_Day_0.mp3' -o Frosthaul-v6-audio/kingdom.mp3
+          curl -L --fail --retry 3 'https://opengameart.org/sites/default/files/Battle.mp3' -o Frosthaul-v6-audio/battle.mp3
+          curl -L --fail --retry 3 'https://opengameart.org/sites/default/files/victory_0.mp3' -o Frosthaul-v6-audio/victory.mp3
+          curl -L --fail --retry 3 'https://opengameart.org/sites/default/files/sword_-_starninjas_1.zip' -o /tmp/sword.zip || curl -L --fail --retry 3 'https://opengameart.org/sites/default/files/sword_-_starninjas.zip' -o /tmp/sword.zip
+          curl -L --fail --retry 3 'https://opengameart.org/sites/default/files/sword_clash_-_starninjas_0.zip' -o /tmp/clash.zip || curl -L --fail --retry 3 'https://opengameart.org/sites/default/files/sword_clash_-_starninjas.zip' -o /tmp/clash.zip
+          mkdir -p /tmp/sword /tmp/clash
+          unzip -q /tmp/sword.zip -d /tmp/sword
+          unzip -q /tmp/clash.zip -d /tmp/clash
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          out=Path('Frosthaul-v6-audio')
+          swords=[p for p in Path('/tmp/sword').rglob('*') if p.suffix.lower() in {'.wav','.ogg','.mp3'}]
+          clashes=[p for p in Path('/tmp/clash').rglob('*') if p.suffix.lower() in {'.wav','.ogg','.mp3'}]
+          if len(swords) < 4 or len(clashes) < 3:
+              raise SystemExit(f'Not enough audio: swords={len(swords)} clashes={len(clashes)}')
+          for i,p in enumerate(sorted(swords)[:4],1):
+              shutil.copy2(p, out/f'sword{i}{p.suffix.lower()}')
+          for i,p in enumerate(sorted(clashes)[:3],1):
+              shutil.copy2(p, out/f'clash{i}{p.suffix.lower()}')
+          (out/'SOURCES.txt').write_text('CC0 sources:\n- OpenGameArt Medieval: Market Day by RandomMind\n- OpenGameArt Battle Theme by Wolfgang_\n- OpenGameArt Medieval Victory Theme by RandomMind\n- OpenGameArt 20 Sword Sound Effects by StarNinjas\n')
+          print('\n'.join(str(p) for p in out.iterdir()))
+          PY
+          tar -czf Frosthaul-v6-audio.tar.gz Frosthaul-v6-audio
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Frosthaul-v6-audio
+          path: Frosthaul-v6-audio.tar.gz
+          if-no-files-found: error
